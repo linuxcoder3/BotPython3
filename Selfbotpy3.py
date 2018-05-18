@@ -20,16 +20,16 @@ line.log("Auth Token : " + str(line.authToken))
 channelToken = line.getChannelResult()
 line.log("Channel Token : " + str(channelToken))
 
-readOpen = codecs.open("read.json","r","utf-8")
-settingsOpen = codecs.open("temp.json","r","utf-8")
+#readOpen = codecs.open("read.json","r","utf-8")
+#settingsOpen = codecs.open("temp.json","r","utf-8")
 
 lineMID = line.profile.mid
 lineProfile = line.getProfile()
 lineSettings = line.getSettings()
 oepoll = OEPoll(line)
 
-read = json.load(readOpen)
-settings = json.load(settingsOpen)
+#read = json.load(readOpen)
+#settings = json.load(settingsOpen)
 
 #settings["myProfile"]["displayName"] = lineProfile.displayName 
 #settings["myProfile"]["statusMessage"] = lineProfile.statusMessage
