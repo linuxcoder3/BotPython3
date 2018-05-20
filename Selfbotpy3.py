@@ -208,6 +208,7 @@ def helpmessage():
                   "╠➣ MyMid" + "\n" + \
                   "╠➣ MyName" + "\n" + \
                   "╠➣ MyBio" + "\n" + \
+                  "╠➣ Invitegroupcall" + "\n" + \
                   "╠➣ MyPicture" + "\n" + \
                   "╠➣ MyVideoProfile" + "\n" + \
                   "╠ MyCover" + "\n" + \
