@@ -47,6 +47,8 @@ settings = {
     "Sambutan": False,
     "Sider":{},
     "checkSticker": False,
+    "checkPost": False,
+    "unsendMessage": False
     "userAgent": [
         "Mozilla/5.0 (X11; U; Linux i586; de; rv:5.0) Gecko/20100101 Firefox/5.0",
         "Mozilla/5.0 (X11; U; Linux amd64; rv:5.0) Gecko/20100101 Firefox/5.0 (Debian)",
@@ -203,6 +205,8 @@ def helpmessage():
                   "╠➣ AutoRead「On/Off」" + "\n" + \
                   "╠➣ CheckSticker「On/Off」" + "\n" + \
                   "╠➣ DetectMention「On/Off」" + "\n" + \
+                  "╠➣ CheckPost「On/Off」" + "\n" + \
+                  "╠➣ UnsendChat「On/Off」" + "\n" + \
                   "╠══[ Self Command ]" + "\n" + \
                   "╠➣ Me" + "\n" + \
                   "╠➣ MyMid" + "\n" + \
@@ -521,6 +525,10 @@ def lineBot(op):
                         else: ret_ += "\n╠➣ Check Sticker ❌"
                         if settings["detectMention"] == True: ret_ += "\n╠➣ Detect Mention ✅"
                         else: ret_ += "\n╠➣ Detect Mention ❌"
+			if settings["checkPost"] == True: ret_ += "\n╠➣ checkPost ✅"
+                        else: ret_ += "\n╠➣ checkPost ❌"
+			if settings["unsendMessage"] == True: ret_ += "\n╠➣ unsendMessage ✅"
+                        else: ret_ += "\n╠➣ unsendMessage ❌"	
                         ret_ += "\n╚══[ Status ]"
                         line.sendMessage(to, str(ret_))
                     except Exception as e:
@@ -561,6 +569,18 @@ def lineBot(op):
                 elif text.lower() == 'detectmention off':
                     settings["datectMention"] = False
                     line.sendMessage(to, "Berhasil menonaktifkan Detect Mention")
+		elif text.lower() == "checkpost on":
+                    settings["checkPost"] = True
+                    line.sendMessage(to, "Berhasil mengaktifkan check details post")
+                elif text.lower() == "checkpost off":
+                    settings["checkPost"] = False
+                    line.sendMessage(to, "Berhasil menonaktifkan check details post")
+		elif text.lower() == "unsendchat on":
+                    settings["unsendMessage"] = False
+                    line.sendMessage(to, "Berhasil menonaktifkan unsend message")	
+                elif text.lower() == "unsendchat off":
+                    settings["unsendMessage"] = False
+                    line.sendMessage(to, "Berhasil menonaktifkan unsend message")
 #==============================================================================#
                 elif text.lower() == 'me':
                     sendMessageWithMention(to, lineMID)
@@ -2505,7 +2525,35 @@ def lineBot(op):
                     ret_ += "\n╠ STICKER URL : line://shop/detail/{}".format(pkg_id)
                     ret_ += "\n╚══[ Finish ]"
                     line.sendMessage(to, str(ret_))
-
+#===================================================================#
+            elif msg.contentType == 16:
+                if settings["checkPost"] == True:
+                    try:
+                        ret_ = "╔══[ Details Post ]"
+                        if msg.contentMetadata["serviceType"] == "GB":
+                            contact = client.getContact(sender)
+                            auth = "\n╠ Penulis : {}".format(str(contact.displayName))
+                        else:
+                            auth = "\n╠ Penulis : {}".format(str(msg.contentMetadata["serviceName"]))
+                        purl = "\n╠ URL : {}".format(str(msg.contentMetadata["postEndUrl"]).replace("line://","https://line.me/R/"))
+                        ret_ += auth
+                        ret_ += purl
+                        if "mediaOid" in msg.contentMetadata:
+                            object_ = msg.contentMetadata["mediaOid"].replace("svc=myhome|sid=h|","")
+                            if msg.contentMetadata["mediaType"] == "V":
+                                if msg.contentMetadata["serviceType"] == "GB":
+                                    ourl = "\n╠ Objek URL : https://obs-us.line-apps.com/myhome/h/download.nhn?tid=612w&{}".format(str(msg.contentMetadata["mediaOid"]))
+                                    murl = "\n╠ Media URL : https://obs-us.line-apps.com/myhome/h/download.nhn?{}".format(str(msg.contentMetadata["mediaOid"]))
+                                else:
+                                    ourl = "\n╠ Objek URL : https://obs-us.line-apps.com/myhome/h/download.nhn?tid=612w&{}".format(str(object_))
+                                    murl = "\n╠ Media URL : https://obs-us.line-apps.com/myhome/h/download.nhn?{}".format(str(object_))
+                                ret_ += murl
+                            else:
+                                if msg.contentMetadata["serviceType"] == "GB":
+                                    ourl = "\n╠ Objek URL : https://obs-us.line-apps.com/myhome/h/download.nhn?tid=612w&{}".format(str(msg.contentMetadata["mediaOid"]))
+                                else:
+                                    ourl = "\n╠ Objek URL : https://obs-us.line-apps.com/myhome/h/download.nhn?tid=612w&{}".format(str(object_))
+                            ret_ += ourl
             elif msg.contentType == 1:
                     if settings["changePicture"] == True:
                         path = line.downloadObjectMsg(msg_id)
@@ -2519,7 +2567,16 @@ def lineBot(op):
                             line.updateGroupPicture(to, path)
                             line.sendMessage(to, "Berhasil mengubah foto group")
 
-
+        if settings["unsendMessage"] == True:
+            try:
+                msg = op.message
+                if msg.toType == 0:
+                    line.log("[{} : {}]".format(str(msg._from), str(msg.text)))
+                else:
+                    line.log("[{} : {}]".format(str(msg.to), str(msg.text)))
+                    msg_dict[msg.id] = {"text": msg.text, "from": msg._from, "createdTime": msg.createdTime, "contentType": msg.contentType, "contentMetadata": msg.contentMetadata}
+            except Exception as error:
+                logError(error)
 #==============================================================================#
         if op.type == 26:
             print ("[ 26 ] RECEIVE MESSAGE")
@@ -2625,6 +2682,32 @@ def lineBot(op):
                 pass
     except Exception as error:
         logError(error)
+       if op.type == 65:
+           print ("[ 65 ] NOTIFIED DESTROY MESSAGE")
+           if settings["unsendMessage"] == True:
+               try:
+                   at = op.param1
+                   msg_id = op.param2
+                   if msg_id in msg_dict:
+                       if msg_dict[msg_id]["from"]:
+                           contact = client.getContact(msg_dict[msg_id]["from"])
+                           if contact.displayNameOverridden != None:
+                               name_ = contact.displayNameOverridden
+                           else:
+                               name_ = contact.displayName
+                               ret_ = "Send Message cancelled."
+                               ret_ += "\nSender : @!"
+                               ret_ += "\nSend At : {}".format(str(dt_to_str(cTime_to_datetime(msg_dict[msg_id]["createdTime"]))))
+                               ret_ += "\nType : {}".format(str(Type._VALUES_TO_NAMES[msg_dict[msg_id]["contentType"]]))
+                               ret_ += "\nText : {}".format(str(msg_dict[msg_id]["text"]))
+                               sendMention(at, str(ret_), [contact.mid])
+                           del msg_dict[msg_id]
+                       else:
+                           line.sendMessage(at,"SentMessage cancelled,But I didn't have log data.\nSorry > <")
+               except Exception as error:
+                   logError(error)
+                   traceback.print_tb(error.__traceback__)
+                
 #==============================================================================#
 while True:
     try:
